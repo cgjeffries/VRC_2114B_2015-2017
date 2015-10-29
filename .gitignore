@@ -15,6 +15,7 @@ $RECYCLE.BIN/
 *.msp
 *.tmp
 *.dropbox
+*.dropbox.attr
 
 # Windows shortcuts
 *.lnk
