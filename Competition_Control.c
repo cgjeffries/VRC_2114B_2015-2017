@@ -110,7 +110,7 @@ task main()
 		{
 	    displayNextLCDString("Autonomous");
 		  startTask(autonomous);
-			mode = "autonomous";
+			mode2 = "autonomous";
 			// Waiting for autonomous phase to end
 			while (bIfiAutonomousMode && !bIfiRobotDisabled)
 			{
@@ -121,7 +121,7 @@ task main()
 				}
 				wait1Msec(25);               // Waiting for autonomous phase to end
 			}
-			mode = "disabled";
+			mode2 = "disabled";
 			stopTask(autonomous);
 		  allMotorsOff();
 		  if(bStopTasksBetweenModes)
@@ -134,7 +134,7 @@ task main()
 		{
 	    displayNextLCDString("User Control");
 			startTask(usercontrol);
-			mode = "usercontrol";
+			mode2 = "usercontrol";
 			// Here we repeat loop waiting for user control to end and (optionally) start
 			// of a new competition run
 			while (!bIfiAutonomousMode && !bIfiRobotDisabled)
@@ -143,7 +143,7 @@ task main()
 					allMotorsOff();
 				wait1Msec(25);
 		  }
-		  mode = "disabled";
+		  mode2 = "disabled";
 		  stopTask(usercontrol);
 		  stopTask(control);
 			allMotorsOff();

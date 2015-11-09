@@ -8,6 +8,8 @@
 #pragma config(Motor,  port2,           leftRearDrive, tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port3,           launcher2,     tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port4,           intake1,       tmotorVex393TurboSpeed_MC29, openLoop, reversed)
+#pragma config(Motor,  port5,           launcher3,     tmotorVex393_MC29, openLoop, reversed)
+#pragma config(Motor,  port6,           intake3,       tmotorVex393TurboSpeed_MC29, openLoop)
 #pragma config(Motor,  port7,           intake2,       tmotorVex393TurboSpeed_MC29, openLoop)
 #pragma config(Motor,  port8,           launcher1,     tmotorVex393_MC29, openLoop, reversed)
 #pragma config(Motor,  port9,           rightRearDrive, tmotorVex393_MC29, openLoop, reversed)
@@ -39,7 +41,8 @@ int time = 0;
 bool PDenabled = false;
 bool controlEnabled = false;
 bool launcherEnabled = false;
-string mode = "disabled";
+string mode2 = "disabled";
+string test;
 //Competition Control and Duration Settings
 #pragma competitionControl(Competition)
 #pragma autonomousDuration(20)
@@ -53,6 +56,7 @@ void setLauncher(float speed)
 {
 	motor[launcher1] = (int) speed;
 	motor[launcher2] = (int) speed;
+	motor[launcher3] = (int) speed;
 }
 
 void rampDown()
@@ -211,7 +215,7 @@ task PD2()
 
 		previousError2 = error2;
 
-		motor[launcherAngleAdjust] = (error2 * Kp2) + (derivative * Kd2);
+		//motor[launcherAngleAdjust] = (error2 * Kp2) + (derivative * Kd2);
 
 		delay(50);
 	}
@@ -240,6 +244,19 @@ task driveControl()
 		}
 
 		if(vexRT[Btn5D] == 1)
+		{
+			motor[intake3] = 127;
+		}
+		else if(vexRT[Btn5U] == 1)
+		{
+			motor[intake3] = -127;
+		}
+		else
+		{
+			motor[intake3] = 0;
+		}
+
+		if(vexRT[Btn5U] == 1)
 		{
 			if(abs(vexRT[Ch2]) > 10)
 			{
@@ -346,7 +363,7 @@ task launcherMaster()
 			controlEnabled = false;
 			rampDown();
 		}
-		else if(mode == "autonomous")
+		else if(mode2 == "autonomous")
 		{
 			while(launcherEnabled == false)
 			{
@@ -395,7 +412,7 @@ task timers()
 void pre_auton()														//I might need to move the pre_auton call in the Vex_Competition_includes to line 54 instead
 																						//of line 61.
 {
-	mode = "preAuton";
+	mode2 = "preAuton";
   bStopTasksBetweenModes = false;
 
   //motor[launcherAngleAdjust] = -50;					//Can I move motors in preauton? should I move the call to it in Vex_Competition_includes to a
@@ -403,7 +420,7 @@ void pre_auton()														//I might need to move the pre_auton call in the V
   //motor[launcherAngleAdjust] = 0;
   //SensorValue[launcherAngle] = 0;
 
-  mode = "afterPreAuton";
+  mode2 = "afterPreAuton";
 
 
 
@@ -422,16 +439,32 @@ task autonomous()
 {
 	startTask(launcherMaster);							//All of this is for the launcher, and for diagnostics
 	PDenabled = false;
-	startTask(PD2);
+	//startTask(PD2);
   startTask(PD);
   startTask(control);
   startTask(launcherSpeed);
   startTask(launcherSpeedAverage);
   startTask(launcherSpeedAverage2);
   startTask(timers);
-  mode = autonomous;
+  mode2 = autonomous;
 
-	AutonomousCodePlaceholderForTesting();  // Remove this function call once you have "real" code.
+  test = "AUTON_RUNNING";
+
+	//AutonomousCodePlaceholderForTesting();  // Remove this function call once you have "real" code.
+
+	//launcherEnabled = true;
+
+	//delay(14000);
+
+	//launcherEnabled = false;
+
+
+	motor[leftFrontDrive] = motor[leftRearDrive] = motor[rightFrontDrive] = motor[rightRearDrive] = 127;
+
+	delay(3000);
+
+	motor[leftFrontDrive] = motor[leftRearDrive] = -127;
+	setLauncher(0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -445,12 +478,12 @@ task autonomous()
 
 task usercontrol()
 {
-	mode = usercontrol;
+	mode2 = usercontrol;
 	startTask(driveControl);								//Start drive/intake code. Should I move the code in that task to the usercontrol task?
 	startTask(launcherMaster);
 	startTask(launcherMaster);							//All of this is for the launcher, and for diagnostics
 	PDenabled = false;
-	startTask(PD2);
+	//startTask(PD2);
   startTask(PD);
   startTask(control);
   startTask(launcherSpeed);
@@ -458,7 +491,6 @@ task usercontrol()
   startTask(launcherSpeedAverage2);
   startTask(timers);
   startTask(distance);
-  mode = autonomous;
 
 	// User control code here, inside the loop
 
