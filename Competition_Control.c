@@ -72,35 +72,35 @@ task main()
 		clearLCDLine(1);
 		displayLCDPos(0, 0);
 
-		while (bIfiRobotDisabled)
-		{
-		  displayLCDPos(0, 0);
-		  displayNextLCDString("Disabled");
-		  nTimeXX = 0;
-			while (true)
-			{
-				displayStatusAndTime();
-				if (!bIfiRobotDisabled)
-				  break;
-				wait1Msec(25);
+		//while (bIfiRobotDisabled)
+		//{
+		//  displayLCDPos(0, 0);
+		//  displayNextLCDString("Disabled");
+		//  nTimeXX = 0;
+		//	while (true)
+		//	{
+		//		displayStatusAndTime();
+		//		if (!bIfiRobotDisabled)
+		//		  break;
+		//		wait1Msec(25);
 
-				displayStatusAndTime();
-				if (!bIfiRobotDisabled)
-				  break;
-				wait1Msec(25);
+		//		displayStatusAndTime();
+		//		if (!bIfiRobotDisabled)
+		//		  break;
+		//		wait1Msec(25);
 
-				displayStatusAndTime();
-				if (!bIfiRobotDisabled)
-				  break;
-				wait1Msec(25);
+		//		displayStatusAndTime();
+		//		if (!bIfiRobotDisabled)
+		//		  break;
+		//		wait1Msec(25);
 
-				displayStatusAndTime();
-				if (!bIfiRobotDisabled)
-				  break;
-				wait1Msec(25);
-				++nTimeXX;
-			}
-	  }
+		//		displayStatusAndTime();
+		//		if (!bIfiRobotDisabled)
+		//		  break;
+		//		wait1Msec(25);
+		//		++nTimeXX;
+		//	}
+	  //}
 
 		nTimeXX = 0;
 		clearLCDLine(0);
