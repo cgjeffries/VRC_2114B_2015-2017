@@ -73,9 +73,13 @@ void setIntake(int power)
 void rampDown()
 {
 	rampingSpeed = temp1;
-	while(launcherRPM > 10)
+	while(launcherRPM > 100)
 	{
 		rampingSpeed = (rampingSpeed - 1); //Should take about 5 seconds
+		if(rampingSpeed < 10)
+		{
+			rampingSpeed = 10;
+		}
 		setLauncher(rampingSpeed);
 		delay(50);
 	}
@@ -242,12 +246,12 @@ task driveControl()
 			ballNumber++;
 			while(SensorValue[ball] == 1 && vexRT[Btn8R] == 1)
 			{
-				setIntake(-60);
+				setIntake(-127);
 				delay(10);
 			}
 			while(SensorValue[ball] == 0 && vexRT[Btn8R] == 1)
 			{
-				setIntake(-60);
+				setIntake(-127);
 				delay(10);
 			}
 			setIntake(10);
@@ -262,166 +266,150 @@ task driveControl()
 		}
 		else
 		{
-			if(vexRT[Btn6U] == 1)
+			if(vexRT[Btn5U] == 1)
 			{
-				motor[intake1] = -60;
-				motor[intake2] = -60;
+				motor[intake1] = -127;
+				//motor[intake2] = -127;
 			}
-			else if(vexRT[Btn6D] == 1)
+			else if(vexRT[Btn5D] == 1)
 			{
-				motor[intake1] = 60;
-				motor[intake2] = 60;
+				motor[intake1] = 127;
+				//motor[intake2] = 127;
 			}
 			else
 			{
 				motor[intake1] = 0;
+				//motor[intake2] = 0;
+			}
+
+			if(vexRT[Btn6U] == 1)
+			{
+				motor[intake2] = -127;
+			}
+			else if(vexRT[Btn6D] == 1)
+			{
+				motor[intake2] = 127;
+			}
+			else
+			{
 				motor[intake2] = 0;
 			}
 		}
 
-
-
-		if(vexRT[Btn5U] == 1)
+		if(abs(vexRT[Ch3]) > 10)
 		{
-			if(abs(vexRT[Ch2]) > 10)
-			{
-				motor[leftFrontDrive] = vexRT[Ch2] * -1;
-				motor[leftRearDrive] = vexRT[Ch2] * -1;
-			}
-			else
-			{
-				motor[leftFrontDrive] = 0;
-				motor[leftRearDrive] = 0;
-			}
-
-			if(abs(vexRT[Ch3]) > 10)
-			{
-				motor[rightFrontDrive] = vexRT[Ch3] * -1;
-				motor[rightRearDrive] = vexRT[Ch3] * -1;
-			}
-			else
-			{
-				motor[rightFrontDrive] = 0;
-				motor[rightRearDrive] = 0;
-			}
+			motor[leftFrontDrive] = vexRT[Ch3];
+			motor[leftRearDrive] = vexRT[Ch3];
 		}
 		else
 		{
-			if(abs(vexRT[Ch3]) > 10)
-			{
-				motor[leftFrontDrive] = vexRT[Ch3];
-				motor[leftRearDrive] = vexRT[Ch3];
-			}
-			else
-			{
-				motor[leftFrontDrive] = 0;
-				motor[leftRearDrive] = 0;
-			}
+			motor[leftFrontDrive] = 0;
+			motor[leftRearDrive] = 0;
+		}
 
-			if(abs(vexRT[Ch2]) > 10)
-			{
-				motor[rightFrontDrive] = vexRT[Ch2];
-				motor[rightRearDrive] = vexRT[Ch2];
-			}
-			else
-			{
-				motor[rightFrontDrive] = 0;
-				motor[rightRearDrive] = 0;
-			}
+		if(abs(vexRT[Ch2]) > 10)
+		{
+			motor[rightFrontDrive] = vexRT[Ch2];
+			motor[rightRearDrive] = vexRT[Ch2];
+		}
+		else
+		{
+			motor[rightFrontDrive] = 0;
+			motor[rightRearDrive] = 0;
 		}
 	}
 }
 
 task distance()
 {
-	while(true)
+while(true)
+{
+	if(vexRT[Btn8U] == 1)
 	{
-		if(vexRT[Btn8U] == 1)
-		{
-			target = 3200;
-		}
-		else if(vexRT[Btn8D] == 1)
-		{
-			target = 2800;
-		}
-		else if(vexRT[Btn8L] == 1)
-		{
-			target = 2400;
-		}
-		delay(50);
+		target = 3200;
 	}
+	else if(vexRT[Btn8D] == 1)
+	{
+		target = 2800;
+	}
+	else if(vexRT[Btn8L] == 1)
+	{
+		target = 2400;
+	}
+	delay(50);
+}
 }
 
 
 
 task launcherMaster()
 {
-	PDenabled = false;
-	controlEnabled = false;
+PDenabled = false;
+controlEnabled = false;
 //	int suff = 9001;
-	master = true;
-	while(true)
-	{
+master = true;
+while(true)
+{
 
 	//mode == "usercontrol"
-		if(!isAuton)
+	if(!isAuton)
+	{
+		while(vexRT[Btn7U] == 0)
 		{
-			while(vexRT[Btn7U] == 0)
-			{
-				delay(100);
-			}
-			time1[T1] = 0;
-
-			rampUp();
-			temp1 = rampingSpeed;
-			PDenabled = true;
-			controlEnabled = true;
-
-			while(vexRT[Btn7D] == 0)
-			{
-				delay(100);
-			}
-
-			PDenabled = false;
-			controlEnabled = false;
-			rampDown();
+			delay(100);
 		}
-		else if(isAuton)
+		time1[T1] = 0;
+
+		rampUp();
+		temp1 = rampingSpeed;
+		PDenabled = true;
+		controlEnabled = true;
+
+		while(vexRT[Btn7D] == 0)
 		{
-			while(launcherEnabled == false)
-			{
-				delay(100);
-			}
-			time1[T1] = 0;
-
-			rampUp();
-			temp1 = rampingSpeed;
-			PDenabled = true;
-			controlEnabled = true;
-
-			while(launcherEnabled == true)
-			{
-				delay(100);
-			}
-
-			PDenabled = false;
-			controlEnabled = false;
-			rampDown();
+			delay(100);
 		}
 
-
+		PDenabled = false;
+		controlEnabled = false;
+		rampDown();
 	}
+	else if(isAuton)
+	{
+		while(launcherEnabled == false)
+		{
+			delay(100);
+		}
+		time1[T1] = 0;
+
+		rampUp();
+		temp1 = rampingSpeed;
+		PDenabled = true;
+		controlEnabled = true;
+
+		while(launcherEnabled == true)
+		{
+			delay(100);
+		}
+
+		PDenabled = false;
+		controlEnabled = false;
+		rampDown();
+	}
+
+
+}
 
 }
 
 task timers()
 {
-	while(true)
-	{
-		delay(1000);
-		time = time + 1;
+while(true)
+{
+	delay(1000);
+	time = time + 1;
 
-	}
+}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -434,17 +422,17 @@ task timers()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void pre_auton()														//I might need to move the pre_auton call in the Vex_Competition_includes to line 54 instead
-																						//of line 61.
+//of line 61.
 {
-	mode2 = "preAuton";
-	bStopTasksBetweenModes = false;
+mode2 = "preAuton";
+bStopTasksBetweenModes = false;
 
-	//motor[launcherAngleAdjust] = -50;					//Can I move motors in preauton? should I move the call to it in Vex_Competition_includes to a
-	//waitUntil(SensorValue[angleReset] == 1);	//different spot?
-	//motor[launcherAngleAdjust] = 0;
-	//SensorValue[launcherAngle] = 0;
+//motor[launcherAngleAdjust] = -50;					//Can I move motors in preauton? should I move the call to it in Vex_Competition_includes to a
+//waitUntil(SensorValue[angleReset] == 1);	//different spot?
+//motor[launcherAngleAdjust] = 0;
+//SensorValue[launcherAngle] = 0;
 
-	mode2 = "afterPreAuton";
+mode2 = "afterPreAuton";
 
 
 
@@ -461,45 +449,45 @@ void pre_auton()														//I might need to move the pre_auton call in the V
 
 task autonomous()
 {
-	isAuton = true;
-	startTask(launcherMaster);							//All of this is for the launcher, and for diagnostics
-	PDenabled = false;
-	//startTask(PD2);
-	startTask(PD);
-	startTask(control);
-	startTask(launcherSpeed);
-	startTask(launcherSpeedAverage);
-	startTask(launcherSpeedAverage2);
-	startTask(timers);
-	mode2 = autonomous;
+isAuton = true;
+startTask(launcherMaster);							//All of this is for the launcher, and for diagnostics
+PDenabled = false;
+//startTask(PD2);
+startTask(PD);
+startTask(control);
+startTask(launcherSpeed);
+startTask(launcherSpeedAverage);
+startTask(launcherSpeedAverage2);
+startTask(timers);
+mode2 = autonomous;
 
 
-	delay(1000);
+delay(1000);
 
 
-	test = "AUTON_RUNNING";
+test = "AUTON_RUNNING";
 
-	//AutonomousCodePlaceholderForTesting();	// Remove this function call once you have "real" code.
+//AutonomousCodePlaceholderForTesting();	// Remove this function call once you have "real" code.
 
-	launcherEnabled = true;
+launcherEnabled = true;
 
-	while(RPMAverage2 < 3200 && time < 13)
+while(RPMAverage2 < 3200 && time < 13)
+{
+	delay(10);
+}
+for(int i = 0; i < 4; i++)
+{
+	if(time < 13)
 	{
-		delay(10);
-	}
-	for(int i = 0; i < 4; i++)
-	{
-		if(time < 13)
-		{
 		ballNumber++;
 		while(SensorValue[ball] == 1 && time < 13)
 		{
-			setIntake(-60);
+			setIntake(-127);
 			delay(10);
 		}
 		while(SensorValue[ball] == 0 && time < 13)
 		{
-			setIntake(-60);
+			setIntake(-127);
 			delay(10);
 		}
 		setIntake(10);
@@ -512,24 +500,24 @@ task autonomous()
 			delay(10);
 		}
 		delay(500);
-		}
 	}
+}
 
-	setIntake(-127);
+setIntake(-127);
 
-	launcherEnabled = false;
+launcherEnabled = false;
 
-	//delay(14000);
+//delay(14000);
 
-	//launcherEnabled = false;
+//launcherEnabled = false;
 
 
-	//motor[leftFrontDrive] = motor[leftRearDrive] = motor[rightFrontDrive] = motor[rightRearDrive] = 127;
+//motor[leftFrontDrive] = motor[leftRearDrive] = motor[rightFrontDrive] = motor[rightRearDrive] = 127;
 
-	//delay(3000);
+//delay(3000);
 
-	//motor[leftFrontDrive] = motor[leftRearDrive] = -127;
-	//setLauncher(0);
+//motor[leftFrontDrive] = motor[leftRearDrive] = -127;
+//setLauncher(0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -543,33 +531,33 @@ task autonomous()
 
 task usercontrol()
 {
-	isAuton = false;
-	mode2 = usercontrol;
-	startTask(driveControl);								//Start drive/intake code. Should I move the code in that task to the usercontrol task?
-	startTask(launcherMaster);
-	startTask(launcherMaster);							//All of this is for the launcher, and for diagnostics
-	PDenabled = false;
-	//startTask(PD2);
-	startTask(PD);
-	startTask(control);
-	startTask(launcherSpeed);
-	startTask(launcherSpeedAverage);
-	startTask(launcherSpeedAverage2);
-	startTask(timers);
-	startTask(distance);
+isAuton = false;
+mode2 = usercontrol;
+startTask(driveControl);								//Start drive/intake code. Should I move the code in that task to the usercontrol task?
+startTask(launcherMaster);
+startTask(launcherMaster);							//All of this is for the launcher, and for diagnostics
+PDenabled = false;
+//startTask(PD2);
+startTask(PD);
+startTask(control);
+startTask(launcherSpeed);
+startTask(launcherSpeedAverage);
+startTask(launcherSpeedAverage2);
+startTask(timers);
+startTask(distance);
 
-	// User control code here, inside the loop
+// User control code here, inside the loop
 
-	while (true)
-	{
-		delay(100);
-		// This is the main execution loop for the user control program. Each time through the loop
-		// your program should update motor + servo values based on feedback from the joysticks.
+while (true)
+{
+	delay(100);
+	// This is the main execution loop for the user control program. Each time through the loop
+	// your program should update motor + servo values based on feedback from the joysticks.
 
-		// .....................................................................................
-		// Insert user code here. This is where you use the joystick values to update your motors, etc.
-		// .....................................................................................
+	// .....................................................................................
+	// Insert user code here. This is where you use the joystick values to update your motors, etc.
+	// .....................................................................................
 
-		 // Remove this function call once you have "real" code.
-	}
+	// Remove this function call once you have "real" code.
+}
 }
