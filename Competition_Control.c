@@ -47,17 +47,17 @@ task control();
 int nTimeXX = 0;
 bool bStopTasksBetweenModes = true;
 
-static void displayStatusAndTime();
+//static void displayStatusAndTime();
 
 task main()
 {
 	// Master CPU will not let competition start until powered on for at least 2-seconds
-	clearLCDLine(0);
-	clearLCDLine(1);
-	displayLCDPos(0, 0);
-	displayNextLCDString("Startup");
+	//clearLCDLine(0);
+	//clearLCDLine(1);
+	//displayLCDPos(0, 0);
+	//displayNextLCDString("Startup");
 	wait1Msec(2000);
-
+	bLCDBacklight = true;
 
 
 
@@ -68,33 +68,33 @@ task main()
 	{
 		pre_auton();
 
-		clearLCDLine(0);
-		clearLCDLine(1);
-		displayLCDPos(0, 0);
+		//clearLCDLine(0);
+		//clearLCDLine(1);
+		//displayLCDPos(0, 0);
 
 		while (bIfiRobotDisabled)
 		{
-		  displayLCDPos(0, 0);
-		  displayNextLCDString("Disabled");
+		  //displayLCDPos(0, 0);
+		  //displayNextLCDString("Disabled");
 		  nTimeXX = 0;
 			while (true)
 			{
-				displayStatusAndTime();
+				//displayStatusAndTime();
 				if (!bIfiRobotDisabled)
 				  break;
 				wait1Msec(25);
 
-				displayStatusAndTime();
+				//displayStatusAndTime();
 				if (!bIfiRobotDisabled)
 				  break;
 				wait1Msec(25);
 
-				displayStatusAndTime();
+				//displayStatusAndTime();
 				if (!bIfiRobotDisabled)
 				  break;
 				wait1Msec(25);
 
-				displayStatusAndTime();
+				//displayStatusAndTime();
 				if (!bIfiRobotDisabled)
 				  break;
 				wait1Msec(25);
@@ -103,12 +103,12 @@ task main()
 	  }
 
 		nTimeXX = 0;
-		clearLCDLine(0);
-		clearLCDLine(1);
-		displayLCDPos(0, 0);
+		//clearLCDLine(0);
+		//clearLCDLine(1);
+		//displayLCDPos(0, 0);
 		if (bIfiAutonomousMode)
 		{
-	    displayNextLCDString("Autonomous");
+	    //displayNextLCDString("Autonomous");
 		  startTask(autonomous);
 			mode2 = "autonomous";
 			// Waiting for autonomous phase to end
@@ -132,7 +132,7 @@ task main()
 
 		else
 		{
-	    displayNextLCDString("User Control");
+	    //displayNextLCDString("User Control");
 			startTask(usercontrol);
 			mode2 = "usercontrol";
 			// Here we repeat loop waiting for user control to end and (optionally) start
@@ -197,24 +197,24 @@ void allTasksStop()
 #endif
 }
 
-static void displayStatusAndTime()
-{
-  displayLCDPos(1, 0);
-	if (bIfiRobotDisabled)
-	  displayNextLCDString("Disable ");
-	else
-	{
-	  if (bIfiAutonomousMode)
-	    displayNextLCDString("Auton  ");
-	  else
-	    displayNextLCDString("Driver ");
-	}
-	displayNextLCDNumber(nTimeXX / 600, 2);
-	displayNextLCDChar(':');
-	displayNextLCDNumber((nTimeXX / 10) % 60, -2);
-	displayNextLCDChar('.');
-	displayNextLCDNumber(nTimeXX % 10, 1);
-}
+//static void displayStatusAndTime()
+//{
+//  //displayLCDPos(1, 0);
+//	if (bIfiRobotDisabled)
+//	  //displayNextLCDString("Disable ");
+//	else
+//	{
+//	  if (bIfiAutonomousMode)
+//	    //displayNextLCDString("Auton  ");
+//	  else
+//	    //displayNextLCDString("Driver ");
+//	}
+//	//displayNextLCDNumber(nTimeXX / 600, 2);
+//	//displayNextLCDChar(':');
+//	//displayNextLCDNumber((nTimeXX / 10) % 60, -2);
+//	//displayNextLCDChar('.');
+//	//displayNextLCDNumber(nTimeXX % 10, 1);
+//}
 
 
 static void UserControlCodePlaceholderForTesting()
@@ -224,7 +224,7 @@ static void UserControlCodePlaceholderForTesting()
   // It can be safely removed in a real program	and removing it will slightly improve the
   // real-time performance of your robot.
 	//
-  displayStatusAndTime();
+  //displayStatusAndTime();
 	wait1Msec(100);
 	++nTimeXX;
 }
@@ -236,7 +236,7 @@ static void AutonomousCodePlaceholderForTesting()
 
 	while (true)
 	{
-	  displayStatusAndTime();
+	  //displayStatusAndTime();
 		wait1Msec(100);
 		++nTimeXX;
 	}
