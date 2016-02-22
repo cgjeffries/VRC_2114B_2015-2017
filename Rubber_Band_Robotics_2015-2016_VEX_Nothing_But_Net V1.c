@@ -55,6 +55,7 @@ bool master = false;
 string test;
 int ballNumber = 0;
 string auton;
+string state;
 const short leftButton = 1;
 const short centerButton = 2;
 const short rightButton = 4;
@@ -188,7 +189,7 @@ void setAuton (int override)
 		delay(100);
 	}
 	waitForRelease("centerButton");
-	while(nLCDButtons != centerButton && bIfiRobotDisabled)
+	while(nLCDButtons != centerButton && !bIfiAutonomousMode || (!bIfiAutonomousMode && !bIfiRobotDisabled))
 	{
 		clearLCDLine(0);
 		clearLCDLine(1);
@@ -479,6 +480,8 @@ while(true)
 	{
 		target = 3300;
 	}
+
+	state = nVexRCReceiveState;
 	delay(50);
 }
 }
@@ -645,13 +648,13 @@ if(auton == "full_court_preloads")
 			setIntake(10);
 			delay(100);
 			setIntake(0);
-			delay(500);
+			//delay(500);
 			while(RPMAverage2 < 3300 && time < 13)
 			{
 				setIntake(0);
 				delay(10);
 			}
-			delay(500);
+			//delay(500);
 		}
 	}
 
@@ -773,6 +776,7 @@ while (true)
 		count = 0;
 	}
 	delay(100);
+
 	// This is the main execution loop for the user control program. Each time through the loop
 	// your program should update motor + servo values based on feedback from the joysticks.
 
