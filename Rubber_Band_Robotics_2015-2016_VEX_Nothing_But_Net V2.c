@@ -199,7 +199,7 @@ void setAuton (int override)
 		delay(100);
 	}
 	waitForRelease("centerButton");
-	while(nLCDButtons != centerButton && !bIfiAutonomousMode || (!bIfiAutonomousMode && !bIfiRobotDisabled))
+	while(nLCDButtons != centerButton && !bIfiAutonomousMode)
 	{
 		clearLCDLine(0);
 		clearLCDLine(1);
