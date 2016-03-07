@@ -6,7 +6,7 @@
 #pragma config(Sensor, dgtl6,  driveEncoderright, sensorQuadEncoder)
 #pragma config(Sensor, dgtl9,  led,            sensorLEDtoVCC)
 #pragma config(Sensor, dgtl10, Puncher,        sensorQuadEncoder)
-#pragma config(Sensor, dgtl12, PuncherLimit,   sensorLEDtoVCC)
+#pragma config(Sensor, dgtl12, PuncherLimit,   sensorTouch)
 #pragma config(Motor,  port1,           leftLauncherBottom, tmotorVex393TurboSpeed_HBridge, openLoop)
 #pragma config(Motor,  port2,           intakeBottom,  tmotorVex393HighSpeed_MC29, openLoop)
 #pragma config(Motor,  port3,           rightDrive,    tmotorVex393HighSpeed_MC29, openLoop, reversed)
@@ -31,7 +31,7 @@ float Kd2left = 0;
 float Kp2right = 0.01;
 float Kd2right = 0;
 int error = 0;
-int target = 3400;
+int target = 2800;
 int derivative = 0;
 int previousError = 0;
 int error2left = 0;
@@ -58,6 +58,10 @@ string test;
 int ballNumber = 0;
 string auton;
 string state;
+int puncherValue = 0;
+int debugStateThingy;
+bool reverse = true;
+bool puncherControl = false;
 const short leftButton = 1;
 const short centerButton = 2;
 const short rightButton = 4;
@@ -88,10 +92,11 @@ void setLauncher(float speed)
 
 void setPuncher(int speed)
 {
-	//motor[leftPuncherTop] = speed;
-	//motor[leftPuncherbottom] = speed;
-	//motor[rightPuncherTop] = speed;
-	//motor[rightPuncherBottom] = speed;
+	motor[leftPuncherTop] = speed;
+	motor[leftPuncherBottom] = speed;
+	motor[rightPuncherTop] = speed;
+	motor[rightPuncherBottom] = speed;
+	puncherValue = speed;
 }
 
 void setIntake(int power)
@@ -199,7 +204,26 @@ void setAuton (int override)
 		delay(100);
 	}
 	waitForRelease("centerButton");
-	while(nLCDButtons != centerButton && !bIfiAutonomousMode)
+	int blah = 0;
+	while(blah == 0 && bIfiRobotDisabled)
+	{
+		clearLCDLine(0);
+		clearLCDLine(1);
+		displayLCDString(0, 0, "Intake Side is");
+		displayLCDString(1, 0, "Front      Back");
+
+		if(nLCDButtons == leftButton)
+		{
+			blah = 1;
+			reverse = false;
+		}
+		else if(nLCDButtons == rightButton)
+		{
+			blah = 1;
+			reverse = true;
+		}
+	}
+	while(nLCDButtons != centerButton && bIfiRobotDisabled)
 	{
 		clearLCDLine(0);
 		clearLCDLine(1);
@@ -395,39 +419,15 @@ task driveControl()
 	while(true)
 	{
 		delay(50);
-		if(vexRT[Btn8R] == 1)
-		{
-			ballNumber++;
-			while(SensorValue[ball] == 1 && vexRT[Btn8R] == 1)
-			{
-				setIntake(-127);
-				delay(10);
-			}
-			while(SensorValue[ball] == 0 && vexRT[Btn8R] == 1)
-			{
-				setIntake(-127);
-				delay(10);
-			}
-			setIntake(10);
-			delay(100);
-			setIntake(0);
-			delay(500);
-			while(RPMAverage2 < 3100 && vexRT[Btn8R] == 1)
-			{
-				setIntake(0);
-				delay(10);
-			}
-		}
-		else
-		{
+
 			if(vexRT[Btn5U] == 1)
 			{
-				motor[intakeTop] = -127;
+				motor[intakeTop] = 127;
 				//motor[intakeBottom] = -127;
 			}
 			else if(vexRT[Btn5D] == 1)
 			{
-				motor[intakeTop] = 127;
+				motor[intakeTop] = -127;
 				//motor[intakeBottom] = 127;
 			}
 			else
@@ -435,58 +435,91 @@ task driveControl()
 				motor[intakeTop] = 0;
 				//motor[intakeBottom] = 0;
 			}
+			if(puncherControl == false)
+			{
+				if(vexRT[Btn7L] == 1)
+				{
+					setPuncher(127);
+				}
+				else if(vexRT[Btn7R] == 1)
+				{
+					setPuncher(-60);
+				}
+				else
+				{
+					setPuncher(0);
+				}
+			}
 
-			if(vexRT[Btn7L] == 1)
-			{
-				setPuncher(127);
-			}
-			else if(vexRT[Btn7R] == 1)
-			{
-				setPuncher(-60);
-			}
-			else
-			{
-				setPuncher(0);
-			}
-
-			if(vexRT[Btn6U] == 1)
-			{
-				motor[intakeBottom] = -127;
-			}
-			else if(vexRT[Btn6D] == 1)
-			{
-				motor[intakeBottom] = 127;
-			}
-			else
-			{
-				motor[intakeBottom] = 0;
-			}
-		}
-
-		if(abs(vexRT[Ch3]) > 10)
+		if(vexRT[Btn6U] == 1)
 		{
-			motor[leftDrive] = vexRT[Ch3];
-			//motor[leftDrive2] = vexRT[Ch3];
-//			motor[leftRearDrive] = vexRT[Ch3];
+			motor[intakeBottom] = 127;
+		}
+		else if(vexRT[Btn6D] == 1)
+		{
+			motor[intakeBottom] = -127;
 		}
 		else
 		{
-			motor[leftDrive] = 0;
-			//motor[leftDrive2] = 0;
-//			motor[leftRearDrive] = 0;
+			motor[intakeBottom] = 0;
 		}
 
-		if(abs(vexRT[Ch2]) > 10)
+
+		if(reverse == true)
 		{
-			motor[rightDrive] = vexRT[Ch2];
-			//motor[rightDrive2] = vexRT[Ch2];
-//			motor[rightRearDrive] = vexRT[Ch2];
+			if(abs(vexRT[Ch3]) > 10)
+			{
+				motor[leftDrive] = vexRT[Ch3];
+				//motor[leftDrive2] = vexRT[Ch3];
+	//			motor[leftRearDrive] = vexRT[Ch3];
+			}
+			else
+			{
+				motor[leftDrive] = 0;
+				//motor[leftDrive2] = 0;
+	//			motor[leftRearDrive] = 0;
+			}
+
+			if(abs(vexRT[Ch2]) > 10)
+			{
+				motor[rightDrive] = vexRT[Ch2];
+				//motor[rightDrive2] = vexRT[Ch2];
+	//			motor[rightRearDrive] = vexRT[Ch2];
+			}
+			else
+			{
+				motor[rightDrive] = 0;
+				//motor[rightDrive2] = 0;
+	//			motor[rightRearDrive] = 0;
+			}
 		}
 		else
 		{
-			motor[rightDrive] = 0;
-			//motor[rightDrive2] = 0;
-//			motor[rightRearDrive] = 0;
+			if(abs(vexRT[Ch2]) > 10)
+			{
+				motor[leftDrive] = -1 * vexRT[Ch2];
+				//motor[leftDrive2] = vexRT[Ch3];
+	//			motor[leftRearDrive] = vexRT[Ch3];
+			}
+			else
+			{
+				motor[leftDrive] = 0;
+				//motor[leftDrive2] = 0;
+	//			motor[leftRearDrive] = 0;
+			}
+
+			if(abs(vexRT[Ch3]) > 10)
+			{
+				motor[rightDrive] = -1 * vexRT[Ch3];
+				//motor[rightDrive2] = vexRT[Ch2];
+	//			motor[rightRearDrive] = vexRT[Ch2];
+			}
+			else
+			{
+				motor[rightDrive] = 0;
+				//motor[rightDrive2] = 0;
+	//			motor[rightRearDrive] = 0;
+			}
 		}
 		if(RPMAverage2 >= target - 100)
 		{
@@ -534,6 +567,25 @@ task distance()
 
 		state = nVexRCReceiveState;
 		delay(50);
+		while(vexRT[Btn8R] == 1)
+		{
+			puncherControl = true;
+			SensorValue[PuncherLimit] = 0;
+			while(SensorValue[PuncherLimit] == 0 && vexRT[Btn8R] == 1)
+			{
+				setPuncher(127);
+				delay(10);
+			}
+			delay(20);
+			while(SensorValue[PuncherLimit] == 1 && vexRT[Btn8R] == 1)
+			{
+				setPuncher(127);
+				delay(10);
+			}
+			setPuncher(0);
+			delay(750);
+		}
+		puncherControl = false;
 	}
 }
 
@@ -671,11 +723,22 @@ if(auton == "full_court_preloads")
 {
 	for(int i = 0; i < 4; i++)
 	{
-		SensorValue[Puncher] = 0;
-		while(SensorValue[Puncher] < 360)
-		setPuncher(127);
+		SensorValue[PuncherLimit] = 0;
+		while(SensorValue[PuncherLimit] == 0)
+		{
+			setPuncher(127);
+			delay(10);
+		}
+		delay(20);
+		while(SensorValue[PuncherLimit] == 1)
+		{
+			setPuncher(127);
+			delay(10);
+		}
+		setPuncher(0);
+		delay(750);
 
-		delay(1000);
+		//delay(1000);
 	}
 
 }
@@ -774,7 +837,7 @@ while (true)
 	}
 	else if(number == 2)
 	{
-		displayLCDString(1, 0, "Flywheel:");
+		displayLCDString(1, 0, "Puncher:");
 		displayNextLCDString(expanderBattery);
 	}
 	else if(number == 3)
@@ -793,6 +856,10 @@ while (true)
 		count = 0;
 	}
 	delay(100);
+
+	debugStateThingy = nVexRCReceiveState;
+
+
 
 	// This is the main execution loop for the user control program. Each time through the loop
 	// your program should update motor + servo values based on feedback from the joysticks.
