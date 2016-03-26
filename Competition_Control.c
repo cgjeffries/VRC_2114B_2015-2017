@@ -197,24 +197,24 @@ void allTasksStop()
 #endif
 }
 
-//static void displayStatusAndTime()
-//{
-//  //displayLCDPos(1, 0);
-//	if (bIfiRobotDisabled)
-//	  //displayNextLCDString("Disable ");
-//	else
-//	{
-//	  if (bIfiAutonomousMode)
-//	    //displayNextLCDString("Auton  ");
-//	  else
-//	    //displayNextLCDString("Driver ");
-//	}
-//	//displayNextLCDNumber(nTimeXX / 600, 2);
-//	//displayNextLCDChar(':');
-//	//displayNextLCDNumber((nTimeXX / 10) % 60, -2);
-//	//displayNextLCDChar('.');
-//	//displayNextLCDNumber(nTimeXX % 10, 1);
-//}
+static void displayStatusAndTime()
+{
+  displayLCDPos(1, 0);
+	if (bIfiRobotDisabled)
+	  displayNextLCDString("Disable ");
+	else
+	{
+	  if (bIfiAutonomousMode)
+	    displayNextLCDString("Auton  ");
+	  else
+	    displayNextLCDString("Driver ");
+	}
+	displayNextLCDNumber(nTimeXX / 600, 2);
+	displayNextLCDChar(':');
+	displayNextLCDNumber((nTimeXX / 10) % 60, -2);
+	displayNextLCDChar('.');
+	displayNextLCDNumber(nTimeXX % 10, 1);
+}
 
 
 static void UserControlCodePlaceholderForTesting()
