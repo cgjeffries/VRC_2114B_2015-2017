@@ -1,13 +1,12 @@
 #pragma config(I2C_Usage, I2C1, i2cSensors)
 #pragma config(Sensor, in1,    flywheelBall,   sensorLineFollower)
 #pragma config(Sensor, in2,    puncherBall,    sensorLineFollower)
+#pragma config(Sensor, in3,    puncherBall2,   sensorLineFollower)
 #pragma config(Sensor, in7,    expanderBatt,   sensorAnalog)
-#pragma config(Sensor, dgtl1,  speed,          sensorQuadEncoder)
+#pragma config(Sensor, dgtl1,  driveEncoderleft, sensorQuadEncoder)
 #pragma config(Sensor, dgtl3,  ball,           sensorTouch)
-#pragma config(Sensor, dgtl4,  driveEncoderleft, sensorQuadEncoder)
 #pragma config(Sensor, dgtl6,  driveEncoderright, sensorQuadEncoder)
 #pragma config(Sensor, dgtl9,  led,            sensorLEDtoVCC)
-#pragma config(Sensor, dgtl10, Puncher,        sensorQuadEncoder)
 #pragma config(Sensor, dgtl12, PuncherLimit,   sensorTouch)
 #pragma config(Sensor, I2C_1,  ,               sensorQuadEncoderOnI2CPort,    , AutoAssign )
 #pragma config(Motor,  port1,           leftLauncherTop, tmotorVex393TurboSpeed_HBridge, openLoop)
@@ -29,12 +28,12 @@ long launcherTemp222 = 0;
 long launcherRPM = 0;
 float Kp = 0.004;
 float Kd = 0.05;
-float Kp2left = 0.01;
+float Kp2left = 0.5;
 float Kd2left = 0;
-float Kp2right = 0.01;
+float Kp2right = 0.5;
 float Kd2right = 0;
 int error = 0;
-int target = 1600;
+int target = 1400;
 int derivative = 0;
 int previousError = 0;
 int error2left = 0;
@@ -59,13 +58,15 @@ bool isAuton = false;
 bool master = false;
 string test;
 int ballNumber = 0;
-string auton;
+string auton = "field_preloads";
 string state;
 int puncherValue = 0;
 int debugStateThingy;
 int baseLightValueFlywheel = 3000;
 int baseLightValuePuncher = 3000;
-bool reverse = true;
+int baseLightValuePuncher2 = 3000;
+int drivePDOut = 0;
+bool reverse = false;
 bool puncherControl = false;
 bool drivePDEnabled = false;
 bool timeout = false;
@@ -154,27 +155,35 @@ void rampUp()
 
 void shootPuncherPreloads()
 {
-	setTimeout(4);
-	for(int i = 0; i < 4; i++)
+	setTimeout(14);
+	while(!timeout)
 	{
 		//SensorValue[PuncherLimit] = 0;
-		while(baseLightValuePuncher - SensorValue[puncherBall] > 1500 && !timeout)
+		while((SensorValue[puncherBall] < 2000 || SensorValue[puncherBall2] < 2000) && !timeout)
 		{
 			setPuncher(127);
 			delay(10);
 		}
-		delay(20);
-		while(baseLightValuePuncher - SensorValue[puncherBall] < 1500 && !timeout)
+		//delay(750);
+		//while((SensorValue[puncherBall] < 2000 || SensorValue[puncherBall2] < 2000) && !timeout)
+		//{
+		//	setPuncher(127);
+		//	delay(10);
+		//}
+		while((SensorValue[puncherBall] > 2000 && SensorValue[puncherBall2] > 2000) && !timeout)
 		{
 			setPuncher(0);
 			delay(10);
 		}
 		//delay(1000);
 	}
+	setPuncher(0);
 }
 
 void shootFlywheelBalls()
 {
+	while(1500 - RPMAverage2 > 50)
+		delay(100);
 	for(int i = 0; i < 4; i++)
 	{
 		while(baseLightValueFlywheel - SensorValue[flywheelBall] < 1500)
@@ -237,6 +246,7 @@ void calibrateLightSensors()
 {
 	string lightValueFlywheel;
 	string lightValuePuncher;
+	string lightValuePuncher2;
 	while(nLCDButtons != centerButton && bIfiRobotDisabled)
 	{
 		displayLCDCenteredString(0, "Please Calibrate");
@@ -249,15 +259,22 @@ void calibrateLightSensors()
 		clearLCDLine(1);
 		sprintf(lightValueFlywheel, "%1.2i%c", SensorValue[flywheelBall]);
 		sprintf(lightValuePuncher, "%1.2i%c", SensorValue[puncherBall]);
+		sprintf(lightValuePuncher2, "%1.2i%c", SensorValue[puncherBall2]);
 		displayLCDString(0, 0, "F: ");
 		displayNextLCDString(lightValueFlywheel);
 		displayLCDString(0, 9, " P:");
 		displayNextLCDString(lightValuePuncher);
-		displayLCDCenteredString(1, "Done");
+		displayLCDString(1, 6, "P2:");
+		displayNextLCDString(lightValuePuncher2);
+		//displayLCDCenteredString(1, "Done");
 		delay(100);
 	}
-	baseLightValueFlywheel = SensorValue[flywheelBall];
-	baseLightValuePuncher = SensorValue[puncherBall];
+	if(bIfiRobotDisabled)
+	{
+		baseLightValueFlywheel = SensorValue[flywheelBall];
+		baseLightValuePuncher = SensorValue[puncherBall];
+		baseLightValuePuncher2 = SensorValue[puncherBall2];
+	}
 
 	waitForRelease("centerButton");
 }
@@ -280,7 +297,7 @@ void setAuton (int override)
 		}
 		if(nLCDButtons == rightButton)
 		{
-			if(autonTemp != 6)
+			if(autonTemp != 7)
 			{
 				autonTemp ++;
 			}
@@ -288,25 +305,29 @@ void setAuton (int override)
 		}
 		if(autonTemp == 1)
 		{
-			auton = "full_court_preloads";
+			auton = "ShootThenDrive";
 		}
 		else if(autonTemp == 2)
 		{
-			auton = "field_preloads";
+			auton = "full_court_preloads";
 		}
 		else if(autonTemp == 3)
 		{
-			auton = "field_spin";
+			auton = "field_preloads";
 		}
 		else if(autonTemp == 4)
 		{
-			auton = "none";
+			auton = "field_spin";
 		}
 		else if(autonTemp == 5)
 		{
-			auton = "TestDistance";
+			auton = "none";
 		}
 		else if(autonTemp == 6)
+		{
+			auton = "TestDistance";
+		}
+		else if(autonTemp == 7)
 		{
 			auton = "TestRotate";
 		}
@@ -408,7 +429,7 @@ task launcherSpeedAverage2()
 
 task launcherSpeed()
 {
-	SensorValue[speed] = 0;
+	//SensorValue[speed] = 0;
 	int RPMA21 = 0;
 	int RPMA22 = 0;
 	int RPMA23 = 0;
@@ -506,6 +527,8 @@ task PD2()
 {
 	while(true)
 	{
+		if(drivePDEnabled)
+		{
 
 		error2left = target2left - SensorValue[driveEncoderleft];
 
@@ -513,7 +536,7 @@ task PD2()
 
 		previousError2left = error2left;
 
-		motor[leftDrive] = ((error2left * Kp2left) + (derivative2left * Kd2left));
+		motor[leftDrive] = -1 * ((error2left * Kp2left) + (derivative2left * Kd2left));
 
 
 		error2right = target2right - SensorValue[driveEncoderright];
@@ -522,7 +545,9 @@ task PD2()
 
 		previousError2right = error2right;
 
-		motor[leftDrive] = ((error2right * Kp2right) + (derivative2right * Kd2right));
+		motor[rightDrive] = -1 * ((error2right * Kp2right) + (derivative2right * Kd2right));
+		drivePDOut = ((error2right * Kp2right) + (derivative2right * Kd2right));
+	}
 
 		delay(50);
 	}
@@ -534,12 +559,12 @@ task driveControl()
 	{
 		delay(50);
 
-			if(vexRT[Btn5U] == 1)
+			if(vexRT[Btn6U] == 1)
 			{
 				motor[intakeTop] = 127;
 				//motor[intakeBottom] = -127;
 			}
-			else if(vexRT[Btn5D] == 1)
+			else if(vexRT[Btn6D] == 1)
 			{
 				motor[intakeTop] = -127;
 				//motor[intakeBottom] = 127;
@@ -565,11 +590,11 @@ task driveControl()
 				}
 			}
 
-		if(vexRT[Btn6U] == 1)
+		if(vexRT[Btn5U] == 1)
 		{
 			motor[intakeBottom] = 127;
 		}
-		else if(vexRT[Btn6D] == 1)
+		else if(vexRT[Btn5D] == 1)
 		{
 			motor[intakeBottom] = -127;
 		}
@@ -668,15 +693,15 @@ task distance()
 	{
 		if(vexRT[Btn8U] == 1)
 		{
-			target = 1600;
+			target = 2000;
 		}
 		else if(vexRT[Btn8D] == 1)
 		{
-			target = 1300;
+			target = 1600;
 		}
 		else if(vexRT[Btn8L] == 1)
 		{
-			target = 1000;
+			target = 1400;
 		}
 
 		state = nVexRCReceiveState;
@@ -732,7 +757,8 @@ while(true)
 		}
 
 		bangbangEnabled = false;
-		rampDown();
+		//rampDown();
+		setLauncher(0);
 	}
 	else if(isAuton)
 	{
@@ -750,8 +776,9 @@ while(true)
 			delay(100);
 		}
 
-		rampDown();
+		//rampDown();
 		bangbangEnabled = false;
+		setLauncher(0);
 	}
 
 
@@ -783,7 +810,7 @@ task timers()
 /////////////////////////////////////////////////////////////////////////////////////////
 int blahblah = 0;
 void pre_auton()														//I might need to move the pre_auton call in the Vex_Competition_includes to line 54 instead
-//of line 61.
+//of line 61
 {
 	mode2 = "preAuton";
 	bStopTasksBetweenModes = false;
@@ -827,10 +854,13 @@ isAuton = true;
 startTask(launcherMaster);							//All of this is for the launcher, and for diagnostics
 startTask(bangbang);
 //PDenabled = false;
-//startTask(PD2);
+startTask(PD2);
 //startTask(PD);
 //startTask(control);
 startTask(launcherSpeed);
+startTask(timers);
+stopTask(driveControl);
+stopTask(distance);
 //startTask(launcherSpeedAverage);
 //startTask(launcherSpeedAverage2);
 //startTask(timers);
@@ -838,6 +868,7 @@ mode2 = autonomous;
 time = 0;
 clearLCDLine(0);
 clearLCDLine(1);
+setAllDrive(0);
 
 delay(100);
 
@@ -847,6 +878,7 @@ test = "AUTON_RUNNING";
 if(auton == "full_court_preloads")
 {
 	shootPuncherPreloads();
+	setPuncher(0);
 }
 else if(auton == "field_spin")
 {
@@ -866,12 +898,14 @@ else if(auton == "field_spin")
 }
 else if(auton == "field_preloads")
 {
+	setAllDrive(0);
 	resetDriveEncoders();
-	setAllDrive(5);
+	//setAllDrive(5);
 	shootPuncherPreloads();
+	setPuncher(0);
 
-	target2left = 3400;
-	target2right = 3400;
+	target2left = 2800;
+	target2right = 2800;
 	drivePDEnabled = true;
 	motor[intakeBottom] = 127;
 	motor[intakeTop] = 127;
@@ -880,13 +914,13 @@ else if(auton == "field_preloads")
 	setTimeout(6);
 	while(!done && !timeout)
 	{
-		if(error2left < 50 && error2right < 50 && count != 10)
+		if(error2left < 50 && error2right < 50 && count < 10)
 		{
 			count ++;
 		}
 		else if(error2left > 50 || error2right > 50)
 		{
-			count = 	0;
+			count = 0;
 		}
 		else if(count >= 10)
 		{
@@ -901,23 +935,23 @@ else if(auton == "field_preloads")
 	delay(250);
 
 	resetDriveEncoders();
-	target2left = -1800;
-	target2right = 1800;
+	target2left = -850;
+	target2right = 650;
 
 	drivePDEnabled = true;
-	setTimeout(0.75);
-	while(baseLightValueFlywheel - SensorValue[flywheelBall] > 500 && !timeout)		//Making sure there isnt a ball on the flywheel
-	{
-		motor[intakeTop] = -60;
-	}
+	//setTimeout(0.75);
+	//while(baseLightValueFlywheel - SensorValue[flywheelBall] > 500 && !timeout)		//Making sure there isnt a ball on the flywheel
+	//{
+	//	motor[intakeTop] = -60;
+	//}
 	motor[intakeTop] = 0;
-
+	target = 2000;
 	launcherEnabled = true;
-	setTimeout(1.5);
+	setTimeout(2.0);
 	count = 0;
 	while(!done && !timeout)
 	{
-		if(error2left > -25 && error2left < 25 && error2right < 25 && error2right > -25 && count != 10)
+		if(error2left > -25 && error2left < 25 && error2right < 25 && error2right > -25 && count < 10)
 		{
 			count ++;
 		}
@@ -931,16 +965,19 @@ else if(auton == "field_preloads")
 		}
 		delay(25);
 	}
+	drivePDEnabled = false;
 
-	setAllDrive(0);
-	delay(250);
+	motor[intakeTop] = -127;
+	delay(500);
+	motor[intakeTop] = 0;
 
 	delay(100);
-
+	setAllDrive(60);
 	shootFlywheelBalls();
 	launcherEnabled = false;
 }
 else if(auton == "none")
+
 {
 																		//Self explanatory.
 	displayLCDCenteredString(0, ":(");
@@ -948,8 +985,8 @@ else if(auton == "none")
 else if(auton == "TestDistance")
 {
 	resetDriveEncoders();
-	target2left = 7200;
-	target2right = 7200;
+	target2left = 2800;
+	target2right = 2800;
 	drivePDEnabled = true;
 	bool done = false;
 	int count = 0;
@@ -961,7 +998,7 @@ else if(auton == "TestDistance")
 		}
 		else if(error2left > 50 || error2right > 50)
 		{
-			count = 	0;
+			count = 0;
 		}
 		else if(count >= 10)
 		{
@@ -975,8 +1012,8 @@ else if(auton == "TestDistance")
 else if(auton == "TestRotate")
 {
 	resetDriveEncoders();
-	target2left = -1800;
-	target2right = 1800;
+	target2left = -850;
+	target2right = 650;
 	drivePDEnabled = true;
 	bool done = false;
 	int count = 0;
@@ -997,6 +1034,14 @@ else if(auton == "TestRotate")
 		delay(25);
 	}
 
+	setAllDrive(0);
+}
+else if(auton == "ShootThenDrive")
+{
+	shootPuncherPreloads();
+	setPuncher(0);
+	setAllDrive(-127);
+	delay(2000);
 	setAllDrive(0);
 }
 
@@ -1023,6 +1068,7 @@ else if(auton == "TestRotate")
 float battery = 0.0;
 task usercontrol()
 {
+drivePDEnabled = false;
 isAuton = false;
 mode2 = usercontrol;
 startTask(driveControl);								//Start drive/intake code. Should I move the code in that task to the usercontrol task?
@@ -1034,6 +1080,8 @@ PDenabled = false;
 //startTask(PD);
 //startTask(control);
 startTask(launcherSpeed);
+stopTask(PD2);
+//stopTask(driveP
 //startTask(launcherSpeedAverage);
 //startTask(launcherSpeedAverage2);
 //startTask(timers);
