@@ -26,8 +26,12 @@
 #include "Vex_Competition_Includes.c"
 
 bool raiseStarOffGround = false;
+bool lifting = false;
 
-
+void resetEncoders(){
+	SensorValue(LDrive) = 0;
+	SensorValue(RDrive) = 0;
+}
 
 void setLeftLauncher(int speed){
 	motor[leftLauncher1] = speed;
@@ -61,10 +65,91 @@ void setDrive(int speed){
 	setLeftDrive(speed);
 }
 
+
+void raiseLauncher(int value){
+	while(SensorValue(launcherValue) > -value){
+		setLauncher(70);
+	}
+	setLauncher(10);
+}
+
+void turnLeftFor(int value){
+	resetEncoders();
+	while(SensorValue(LDrive) > -value || SensorValue(RDrive) < value){
+		if(SensorValue(LDrive) > -value){
+			setLeftDrive(-70);
+		}
+		else{
+			setLeftDrive(0);
+		}
+
+		if(SensorValue(RDrive) < value){
+			setRightDrive(70);
+		}
+		else{
+			setRightDrive(0);
+		}
+	}
+	setDrive(0);
+}
+
+void turnRightFor(int value){
+	resetEncoders();
+	while(SensorValue(RDrive) > -value || SensorValue(LDrive) < value){
+		if(SensorValue(RDrive) > -value){
+			setRightDrive(-70);
+		}
+		else
+			setRightDrive(0);
+
+		if(SensorValue(LDrive) < value){
+			setLeftDrive(70);
+		}
+		else
+			setLeftDrive(0);
+	}
+	setDrive(0);
+}
+
+void driveForwardFor(int value){
+	resetEncoders();
+	while(SensorValue(RDrive) < value || SensorValue(LDrive) < value){
+		if(SensorValue(RDrive) < value){
+			setRightDrive(70);
+		}
+		else
+			setRightDrive(0);
+		if(SensorValue(LDrive) < value){
+			setLeftDrive(70);
+		}
+		else
+			setLeftDrive(0);
+	}
+	setDrive(0);
+}
+
+void driveBackwardFor(int value){
+	resetEncoders();
+	while(SensorValue(RDrive) > -value || SensorValue(LDrive) > -value){
+		if(SensorValue(RDrive) > -value){
+			setRightDrive(-70);
+		}
+		else
+			setRightDrive(0);
+
+		if(SensorValue(LDrive) > -value){
+			setLeftDrive(-70);
+		}
+		else
+			setLeftDrive(0);
+	}
+	setDrive(0);
+}
+
 void launcherAuto(){
 	if(raiseStarOffGround){
 		if(SensorValue(launcherValue) > -200){
-			setLauncher(60);
+			setLauncher(70);
 		}
 		else{
 			setLauncher(15);
@@ -98,20 +183,37 @@ void launcher(){
 	if(vexRT[Btn6U] && SensorValue(launcherValue) > -500){
 		setLauncher(127);
 		raiseStarOffGround = false;
+		lifting = false;
 	}
 	else if(vexRT[Btn6D]){
-		setLauncher(-30);
+		setLauncher(-40);
 		raiseStarOffGround = false;
+		lifting = false;
 	}
 	else{
-		if(SensorValue(launcherValue) <= -100 && !raiseStarOffGround){
-			setLauncher(15);
-		}
-		else{
-			if(!raiseStarOffGround){
-				setLauncher(0);
+		if(!lifting){
+			if(SensorValue(launcherValue) <= -100 && !raiseStarOffGround){
+				setLauncher(15);
+			}
+			else{
+				if(!raiseStarOffGround){
+					setLauncher(0);
+				}
 			}
 		}
+
+		if(vexRT[Btn5D]){
+			setLauncher(-60);
+			lifting = true;
+			raiseStarOffGround = false;
+		}
+		else if(vexRT[Btn5U]){
+			setLauncher(-127);
+			lifting = true;
+			raiseStarOffGround = false;
+		}
+		else if(lifting)
+			setLauncher(0);
 	}
 }
 
@@ -158,6 +260,7 @@ void pre_auton(){
   // running between Autonomous and Driver controlled modes. You will need to
   // manage all user created tasks if set to false.
   bStopTasksBetweenModes = true;
+  resetEncoders();
 
 
 
@@ -181,63 +284,35 @@ void pre_auton(){
 /*---------------------------------------------------------------------------*/
 
 task autonomous(){
+	resetEncoders();
 	if(SensorValue(autonSelect) < 1500){
-
-		setDrive(60);
-
+		resetEncoders();
+		driveForwardFor(300);
+		raiseLauncher(100);
+		driveForwardFor(400);
+		delay(100);
+		turnRightFor(220);
+		delay(100);
+		//driveBackwardFor(1600);
+		delay(100);
+		setDrive(-127);
+		delay(3000);
+		setDrive(0);
+		delay(100);
+		raiseLauncher(300);
+		delay(00);
+		setLauncher(-40);
 		delay(250);
-
-		setDrive(0);
-
-		delay(100);
-
-		setRightDrive(-50);
-
-		delay(350);
-
-		setRightDrive(0);
-
-		delay(100);
-
-		setDrive(-50);
-
-		delay(750);
-
-		setDrive(0);
-
-		delay(100);
-
-		setLauncher(50);
-
-		delay(350);
-
 		setLauncher(15);
-
 		delay(100);
-
-		setDrive(-127);
-
-		delay(1000);
-
-		setDrive(0);
-
+		driveForwardFor(720);
 		delay(100);
-
-		setLeftDrive(-60);
-
-		delay(350);
-
-		setLeftDrive(0);
-
+		//raiseLauncher(400);
 		delay(100);
-
-		setDrive(-127);
-		setLauncher(127);
-
-		delay(750);
-
-		setDrive(0);
-		setLauncher(0);
+		//setLauncher(-40);
+		delay(150);
+		//setLauncher(15);
+		delay(100);
 	}
 	else if(SensorValue(autonSelect) >= 1500 && SensorValue(autonSelect) <= 2500){
 
@@ -268,6 +343,7 @@ task autonomous(){
 task usercontrol(){
   while (true){
 		driver();
+		/*
 		if(vexRT[Btn7U]){
 			defliporlift();
 		}
@@ -275,8 +351,9 @@ task usercontrol(){
 			halfLift();
 		}
 		else{
+		*/
 			launcher();
-		}
+		//}
 		misc();
 		launcherAuto();
   }
